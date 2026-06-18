@@ -98,6 +98,40 @@ npx vitest watch tests/e2e/auth.test.ts
         └── tags.test.ts       # 16 tests
 ```
 
+## Use cases
+
+```mermaid
+flowchart LR
+    subgraph Anon[Anonymous]
+        R1[Register]
+        L1[Login]
+        V1[View recipe]
+        V2[Browse recipes]
+        V3[Filter by tag or difficulty]
+        P1[View public profile]
+    end
+
+    subgraph Author[Authenticated]
+        CR[Create recipe]
+        ER[Edit own recipe]
+        DR[Delete own recipe]
+        CI[Add / edit / delete ingredients]
+        CT[Create tag]
+        AT[Tag own recipe]
+        DT[Detach tag from own recipe]
+        UP[Update own profile]
+    end
+
+    V2 --> V3
+    CR --> AT
+    CR --> CI
+    ER --> CI
+    DR --> AT
+    DR --> CI
+```
+
+Two actors: **Anonymous** (can register, log in, browse, view) and **Authenticated** (CRUD on own recipes, manage ingredients/tags, update own profile).
+
 ## TDD workflow
 
 1. Run `npm test` — all 82 tests fail (routes don't exist yet).
@@ -118,6 +152,45 @@ Implement modules however you like (single file per resource, or split into cont
 ## API spec
 
 All requests/responses are JSON. Auth uses `Authorization: Bearer <token>` (JWT).
+
+### Entity-relationship diagram
+
+```mermaid
+erDiagram
+    users ||--o{ recipes : "authors"
+    recipes ||--o{ ingredients : "has"
+    recipes ||--o{ recipe_tags : "tagged"
+    tags ||--o{ recipe_tags : "applied to"
+
+    users {
+        bigserial id PK
+        text email
+        text password
+        text name
+    }
+    recipes {
+        bigserial id PK
+        text title
+        int cooking_time
+        text difficulty
+        bigint author_id FK
+    }
+    ingredients {
+        bigserial id PK
+        bigint recipe_id FK
+        text name
+        text quantity
+    }
+    tags {
+        bigserial id PK
+        text name
+        text slug
+    }
+    recipe_tags {
+        bigint recipe_id FK
+        bigint tag_id FK
+    }
+```
 
 ### Error envelope
 
