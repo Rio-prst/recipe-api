@@ -108,6 +108,7 @@ flowchart LR
         V1[View recipe]
         V2[Browse recipes]
         V3[Filter by tag or difficulty]
+        V4[View recipes by tag /tags/:slug/recipes]
         P1[View public profile]
     end
 
@@ -119,6 +120,7 @@ flowchart LR
         CT[Create tag]
         AT[Tag own recipe]
         DT[Detach tag from own recipe]
+        ME[Get current user /auth/me]
         UP[Update own profile]
     end
 
@@ -126,8 +128,8 @@ flowchart LR
     CR --> AT
     CR --> CI
     ER --> CI
-    DR --> AT
-    DR --> CI
+    DR -. cascades .-> AT
+    DR -. cascades .-> CI
 ```
 
 Two actors: **Anonymous** (can register, log in, browse, view) and **Authenticated** (CRUD on own recipes, manage ingredients/tags, update own profile).
@@ -167,13 +169,16 @@ erDiagram
         text email
         text password
         text name
+        timestamptz created_at
     }
     recipes {
         bigserial id PK
         text title
+        text description
         int cooking_time
         text difficulty
         bigint author_id FK
+        timestamptz created_at
     }
     ingredients {
         bigserial id PK
