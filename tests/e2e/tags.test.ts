@@ -26,6 +26,13 @@ describe('POST /tags', () => {
     const res = await authedReq(token).post('/tags').send({ name: 'X', slug: 'Has Spaces!' });
     expect(res.status).toBe(400);
   });
+
+  it('returns 400 on empty slug', async () => {
+    const { token } = await seedUser();
+    const res = await authedReq(token).post('/tags').send({ name: 'X', slug: '' });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
 });
 
 describe('GET /tags', () => {
@@ -77,6 +84,21 @@ describe('POST /recipes/:recipeId/tags', () => {
 
     const res = await authedReq(token).post(`/recipes/${recipe.id}/tags`).send({ tagId: tag.id });
     expect(res.status).toBe(409);
+  });
+
+  it('returns 404 when attaching non-existent tagId', async () => {
+    const { token } = await seedUser();
+    const recipe = await seedRecipe(token);
+    const res = await authedReq(token).post(`/recipes/${recipe.id}/tags`).send({ tagId: 99999 });
+    expect(res.status).toBe(404);
+  });
+
+  it('returns 400 when body has neither tagId nor slug', async () => {
+    const { token } = await seedUser();
+    const recipe = await seedRecipe(token);
+    const res = await authedReq(token).post(`/recipes/${recipe.id}/tags`).send({});
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
   });
 });
 

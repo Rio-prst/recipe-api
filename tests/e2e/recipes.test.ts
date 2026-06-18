@@ -42,6 +42,26 @@ describe('POST /recipes', () => {
 
     expect(res.status).toBe(400);
   });
+
+  it('returns 400 on negative cookingTime', async () => {
+    const { token } = await seedUser();
+    const res = await authedReq(token)
+      .post('/recipes')
+      .send({ title: 'Pasta', cookingTime: -1, difficulty: 'easy' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('returns 400 on non-integer cookingTime', async () => {
+    const { token } = await seedUser();
+    const res = await authedReq(token)
+      .post('/recipes')
+      .send({ title: 'Pasta', cookingTime: 'abc', difficulty: 'easy' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
 });
 
 describe('GET /recipes', () => {
@@ -74,6 +94,26 @@ describe('GET /recipes', () => {
     const res = await request(app).get('/recipes?sort=banana:asc');
     expect(res.status).toBe(400);
   });
+
+  it('returns 400 on difficulty=impossible', async () => {
+    const res = await request(app).get('/recipes?difficulty=impossible');
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 on cookingTimeMax=abc', async () => {
+    const res = await request(app).get('/recipes?cookingTimeMax=abc');
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 on page=0', async () => {
+    const res = await request(app).get('/recipes?page=0');
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 on page=abc', async () => {
+    const res = await request(app).get('/recipes?page=abc');
+    expect(res.status).toBe(400);
+  });
 });
 
 describe('GET /recipes/:id', () => {
@@ -92,6 +132,11 @@ describe('GET /recipes/:id', () => {
 
   it('returns 404 for missing recipe', async () => {
     const res = await request(app).get('/recipes/99999');
+    expect(res.status).toBe(404);
+  });
+
+  it('returns 404 for negative recipe id', async () => {
+    const res = await request(app).get('/recipes/-1');
     expect(res.status).toBe(404);
   });
 });
@@ -114,6 +159,15 @@ describe('PATCH /recipes/:id', () => {
     const res = await authedReq(token).patch(`/recipes/${recipe.id}`).send({ title: 'X' });
     expect(res.status).toBe(403);
   });
+
+  it('returns 404 when patched after delete', async () => {
+    const { token } = await seedUser();
+    const recipe = await seedRecipe(token);
+    await authedReq(token).delete(`/recipes/${recipe.id}`);
+
+    const res = await authedReq(token).patch(`/recipes/${recipe.id}`).send({ title: 'X' });
+    expect(res.status).toBe(404);
+  });
 });
 
 describe('DELETE /recipes/:id', () => {
@@ -131,6 +185,15 @@ describe('DELETE /recipes/:id', () => {
 
     const res = await authedReq(token).delete(`/recipes/${recipe.id}`);
     expect(res.status).toBe(403);
+  });
+
+  it('returns 404 on second delete', async () => {
+    const { token } = await seedUser();
+    const recipe = await seedRecipe(token);
+    await authedReq(token).delete(`/recipes/${recipe.id}`);
+
+    const res = await authedReq(token).delete(`/recipes/${recipe.id}`);
+    expect(res.status).toBe(404);
   });
 });
 

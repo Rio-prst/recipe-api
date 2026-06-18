@@ -1,6 +1,6 @@
 # Recipe API
 
-A REST API for recipes, users, ingredients, and tags. Built test-first — **60 e2e tests are RED by design**. The intern's job: make them green.
+A REST API for recipes, users, ingredients, and tags. Built test-first — **82 e2e tests are RED by design**. The intern's job: make them green.
 
 ## Stack
 
@@ -72,18 +72,18 @@ cp .env.example .env.test
 └── tests/
     └── e2e/
         ├── helpers.ts         # API-based seeders (no direct DB)
-        ├── auth.test.ts       # 8 tests
-        ├── users.test.ts      # 8 tests
-        ├── recipes.test.ts    # 22 tests (CRUD + filters)
-        ├── ingredients.test.ts # 9 tests
-        └── tags.test.ts       # 13 tests
+        ├── auth.test.ts       # 15 tests
+        ├── users.test.ts      # 10 tests
+        ├── recipes.test.ts    # 31 tests (CRUD + filters + negative)
+        ├── ingredients.test.ts # 10 tests
+        └── tags.test.ts       # 16 tests
 ```
 
 There is no `db/schema.sql` — the schema lives entirely in migration files.
 
 ## TDD workflow
 
-1. Run `npm test` — all 60 tests fail (routes don't exist yet).
+1. Run `npm test` — all 82 tests fail (routes don't exist yet).
 2. Pick the simplest test, e.g. `auth.test.ts` → "POST /auth/register returns 201".
 3. Write the schema in `001_init.up.sql` (users table first).
 4. Add the matching `001_init.down.sql` rollback.

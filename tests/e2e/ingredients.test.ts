@@ -44,6 +44,17 @@ describe('POST /recipes/:recipeId/ingredients', () => {
       .send({ name: 'X', quantity: '1' });
     expect(res.status).toBe(404);
   });
+
+  it('returns 404 when recipe is deleted', async () => {
+    const { token } = await seedUser();
+    const recipe = await seedRecipe(token);
+    await authedReq(token).delete(`/recipes/${recipe.id}`);
+
+    const res = await authedReq(token)
+      .post(`/recipes/${recipe.id}/ingredients`)
+      .send({ name: 'X', quantity: '1' });
+    expect(res.status).toBe(404);
+  });
 });
 
 describe('GET /recipes/:recipeId/ingredients', () => {

@@ -16,6 +16,12 @@ describe('GET /users/:id', () => {
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('NOT_FOUND');
   });
+
+  it('returns 400 on non-numeric :id', async () => {
+    const res = await request(app).get('/users/abc');
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
 });
 
 describe('PATCH /users/:id', () => {
@@ -72,5 +78,12 @@ describe('PATCH /users/:id', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.user).not.toHaveProperty('password');
+  });
+
+  it('returns 400 on non-numeric :id', async () => {
+    const { token } = await seedUser();
+    const res = await authedReq(token).patch('/users/abc').send({ name: 'X' });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
   });
 });
