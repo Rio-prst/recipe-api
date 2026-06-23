@@ -17,7 +17,7 @@ class UserService {
   }
 
   private validateId(id: number) {
-    if (isNaN(id)) {
+    if (!Number.isInteger(id) || id < 1) {
       throw new ValidationError('Invalid ID format'); 
     }
   }
