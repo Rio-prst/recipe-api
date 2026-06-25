@@ -2,7 +2,7 @@ import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middlewares/auth';
 import TagService from '../services/tag.service';
 import { validateTag } from '../validators/tag.validator';
-import { ValidationError } from '../utils/error';
+import { UnauthorizedError, ValidationError } from '../utils/error';
 
 const tagService = new TagService();
 
@@ -27,9 +27,14 @@ export async function getTags(req: AuthRequest, res: Response, next: NextFunctio
 
 export async function attachTag(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
-    const key = req.body.tagId ? Number(req.body.tagId) : req.body.slug;
+    const tagId = req.body.tagId ? Number(req.body.tagId) : undefined;
+    const slug = typeof req.body.slug === 'string' ? req.body.slug : undefined;
+    const key = tagId ?? slug;
+
     if (!key) throw new ValidationError('tagId or slug required');
-    const tag = await tagService.attachTag(Number(req.params.recipeId), req.user!.id, key);
+    if (!req.user?.id) throw new UnauthorizedError('Unauthorized');
+
+    const tag = await tagService.attachTag(Number(req.params.recipeId), Number(req.user.id), key);
     res.status(201).json({ tag });
   } catch (err) {
     next(err);

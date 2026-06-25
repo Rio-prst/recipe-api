@@ -1,6 +1,6 @@
 import TagRepository, { Tag } from '../repositories/tag.repository';
 import RecipeRepository from '../repositories/recipe.repository';
-import { NotFoundError, ForbiddenError } from '../utils/error';
+import { NotFoundError, ForbiddenError, ConflictError } from '../utils/error';
 
 class TagService {
   private readonly tagRepository: TagRepository;
@@ -18,6 +18,11 @@ class TagService {
   }
 
   async createTag(name: string, slug: string): Promise<Tag> {
+    const existingTag = await this.tagRepository.findBySlug(slug);
+    if (existingTag) {
+      throw new ConflictError('Slug already exists');
+    }
+
     return await this.tagRepository.create(name, slug);
   }
 
@@ -37,6 +42,11 @@ class TagService {
       const tag = await this.tagRepository.findBySlug(tagIdOrSlug);
       if (!tag) throw new NotFoundError('Tag with specified slug not found');
       tagId = tag.id;
+    }
+
+    const isAlreadyAttached = await this.tagRepository.isTagAttached(recipeId, tagId);
+    if (isAlreadyAttached) {
+      throw new ConflictError('Tag already attached to this recipe');
     }
 
     return await this.tagRepository.attachToRecipe(recipeId, tagId);

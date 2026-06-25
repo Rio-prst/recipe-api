@@ -51,6 +51,14 @@ class TagRepository {
     return this.parseTag(result.rows[0]);
   }
 
+  async isTagAttached(recipeId: number, tagId: number): Promise<boolean> {
+    const result = await this.db.query(
+      `SELECT 1 FROM recipe_tags WHERE recipe_id = $1 AND tag_id = $2 LIMIT 1;`,
+      [recipeId, tagId]
+    );
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
   async detachFromRecipe(recipeId: number, tagId: number): Promise<void> {
     await this.db.query(`DELETE FROM recipe_tags WHERE recipe_id = $1 AND tag_id = $2`, [recipeId, tagId]);
   }

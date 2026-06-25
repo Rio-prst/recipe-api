@@ -33,8 +33,15 @@ export async function login(req: Request, res:Response, next: NextFunction) {
 
 export async function me(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const user = await authService.me(req.user!.id);
-    res.status(200).json(user);
+    if (!req.user || !req.user.id) {
+      res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } });
+      return;
+    }
+
+    const user = await authService.me(Number(req.user.id));
+    res.status(200).json({
+      user: user,
+    });
   } catch (err) {
     next(err);
   }

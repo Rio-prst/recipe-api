@@ -53,7 +53,11 @@ class AuthService {
       throw new UnauthorizedError('User no longer exist');
     }
 
-    return user;
+    return {
+      id: Number(user.id),
+      email: user.email,
+      name: user.name,
+    };
   }
 }
 
