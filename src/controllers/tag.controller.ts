@@ -53,9 +53,20 @@ export async function detachTag(req: AuthRequest, res: Response, next: NextFunct
 export async function getRecipesByTag(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
     const slug = String(req.params.slug);
-    const query = req.query as Record<string, string | string[] | undefined>;
-    const result = await tagService.getRecipesByTag(slug, query);
-    res.status(200).json({ result });
+    const page = typeof req.query.page === 'string' ? req.query.page : undefined;
+    const limit = typeof req.query.limit === 'string' ? req.query.limit : undefined;
+    const queryDiff = req.query.difficulty;
+    const difficulty = (queryDiff === 'easy' || queryDiff === 'medium' || queryDiff === 'hard') 
+      ? queryDiff 
+      : undefined;
+    const validateFilters = { page, limit, difficulty };
+    const result = await tagService.getRecipesByTag(slug, validateFilters);
+
+    res.status(200).json({
+      tag: result.tag,
+      data: result.data,
+    });
+
   } catch (err) {
     next(err);
   }
