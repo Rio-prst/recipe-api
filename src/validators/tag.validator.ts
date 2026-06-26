@@ -20,9 +20,9 @@ export function validateTag(body: unknown): TagInput {
   }
 
   if (!b.slug || !SLUG_REGEX.test(b.slug)) {
-    details.push({ 
-      path: 'slug', 
-      message: 'Slug must be lowercase alphanumeric and dashes only' 
+    details.push({
+      path: 'slug',
+      message: 'Slug must be lowercase alphanumeric and dashes only',
     });
   }
 
@@ -30,8 +30,8 @@ export function validateTag(body: unknown): TagInput {
     throw new ValidationError('Validation failed', details);
   }
 
-  return { 
-    name: b.name!, 
-    slug: b.slug! 
+  return {
+    name: b.name!,
+    slug: b.slug!,
   };
 }

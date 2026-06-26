@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { createRecipe, 
-  getAllRecipes, 
-  getRecipeById, 
-  updateRecipe, 
-  deleteRecipe 
+import {
+  createRecipe,
+  deleteRecipe,
+  getAllRecipes,
+  getRecipeById,
+  updateRecipe,
 } from '../controllers/recipe.controller';
 import { requireAuth } from '../middlewares/auth';
 

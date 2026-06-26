@@ -1,5 +1,5 @@
-import { Response, NextFunction } from 'express';
-import { AuthRequest } from '../middlewares/auth';
+import type { NextFunction, Response } from 'express';
+import type { AuthRequest } from '../middlewares/auth';
 import UserService from '../services/user.service';
 import { ValidationError } from '../utils/error';
 
@@ -14,13 +14,17 @@ export async function getUser(req: AuthRequest, res: Response, next: NextFunctio
 
     const user = await userService.getUserById(targetId);
 
-    res.status(200).json({user});
+    res.status(200).json({ user });
   } catch (err) {
     next(err);
   }
 }
 
-export async function updateUser(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+export async function updateUser(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const targetId = Number(req.params.id);
 

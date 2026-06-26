@@ -1,5 +1,6 @@
-import { Pool } from 'pg';
+import type { Pool } from 'pg';
 import { db as dbClient } from '../config/db';
+import { ValidationError } from '../utils/error';
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
@@ -59,7 +60,7 @@ class RecipeRepository {
     return {
       id: Number(row.id),
       title: row.title,
-      description: row.description ?? '',
+      description: row.description,
       cookingTime: row.cooking_time,
       difficulty: row.difficulty,
       authorId: Number(row.author_id),
@@ -72,7 +73,7 @@ class RecipeRepository {
       `INSERT INTO recipes (title, description, cooking_time, difficulty, author_id)
       VALUES ($1, $2, $3, $4, $5)
       RETURNING id, title, description, cooking_time, difficulty, author_id, created_at;`,
-      [data.title, data.description, data.cookingTime, data.difficulty, data.authorId]
+      [data.title, data.description, data.cookingTime, data.difficulty, data.authorId],
     );
 
     const row = result.rows[0];
@@ -83,21 +84,8 @@ class RecipeRepository {
     return this.toRecipe(row);
   }
 
-  // async findById(id: number): Promise<Recipe | null> {
-  //   const result = await this.db.query<RecipeRow>(
-  //     `SELECT * FROM recipes WHERE id = $1`,
-  //     [id]
-  //   );
-
-  //   const row = result.rows[0];
-  //   return row ? this.toRecipe(row) : null;
-  // }
-
   async findById(id: number): Promise<RecipeDetail | null> {
-    const result = await this.db.query<RecipeRow>(
-      `SELECT * FROM recipes WHERE id = $1`,
-      [id]
-    );
+    const result = await this.db.query<RecipeRow>(`SELECT * FROM recipes WHERE id = $1`, [id]);
 
     const row = result.rows[0];
     if (!row) return null;
@@ -105,7 +93,7 @@ class RecipeRepository {
     const recipe = this.toRecipe(row);
     const ingredientsResult = await this.db.query<RecipeIngredientRelation>(
       `SELECT id, name, quantity FROM ingredients WHERE recipe_id = $1 ORDER BY id ASC;`,
-      [id]
+      [id],
     );
 
     const tagsResult = await this.db.query<RecipeTagRelation>(
@@ -113,7 +101,7 @@ class RecipeRepository {
        FROM tags t
        JOIN recipe_tags rt ON t.id = rt.tag_id
        WHERE rt.recipe_id = $1 ORDER BY t.id ASC;`,
-      [id]
+      [id],
     );
 
     return {
@@ -123,7 +111,10 @@ class RecipeRepository {
     };
   }
 
-  async update(id: number, data: Partial<Omit<Recipe, 'id' | 'authorId' | 'createdAt'>>): Promise<Recipe> {
+  async update(
+    id: number,
+    data: Partial<Omit<Recipe, 'id' | 'authorId' | 'createdAt'>>,
+  ): Promise<Recipe> {
     const fields: string[] = [];
     const values: (string | number)[] = [];
     let index = 1;
@@ -148,7 +139,11 @@ class RecipeRepository {
       values.push(data.difficulty);
     }
 
-    values.push(id)
+    if (fields.length === 0) {
+      throw new ValidationError('No fields to update');
+    }
+
+    values.push(id);
 
     const query = `UPDATE recipes SET ${fields.join(', ')} WHERE id = $${index} RETURNING id, title, description, cooking_time, difficulty, author_id, created_at;`;
     const result = await this.db.query<RecipeRow>(query, values);
@@ -190,12 +185,13 @@ class RecipeRepository {
     if (filters.tags) {
       const tagList = Array.isArray(filters.tags) ? filters.tags : [filters.tags];
       if (tagList.length > 0) {
+        const tagIndex = index++;
         whereClauses.push(`
           EXISTS (
             SELECT 1 FROM recipe_tags rt 
             JOIN tags t ON rt.tag_id = t.id 
-            WHERE rt.recipe_id = recipes.id AND t.slug = ANY($${index++}::text[])
-            HAVING COUNT(DISTINCT t.slug) = ${tagList.length}
+            WHERE rt.recipe_id = recipes.id AND t.slug = ANY($${tagIndex}::text[])
+            HAVING COUNT(DISTINCT t.slug) = CARDINALITY($${tagIndex}::text[])
           )
         `);
         values.push(tagList);
@@ -203,15 +199,18 @@ class RecipeRepository {
     }
 
     const whereStatement = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
-
     const countResult = await this.db.query<{ count: string }>(
       `SELECT COUNT(*) FROM recipes ${whereStatement}`,
-      values
+      values,
     );
 
     const total = Number(countResult.rows[0]?.count ?? 0);
-
     const offset = (filters.page - 1) * filters.limit;
+    const allowedSortFields = new Set(['created_at', 'cooking_time']);
+    const allowedSortOrders = new Set(['ASC', 'DESC']);
+    if (!allowedSortFields.has(filters.sortField) || !allowedSortOrders.has(filters.sortOrder)) {
+      throw new ValidationError('Invalid sort parameters');
+    }
 
     const query = `
       SELECT * FROM recipes 
@@ -219,12 +218,12 @@ class RecipeRepository {
       ORDER BY ${filters.sortField} ${filters.sortOrder} 
       LIMIT $${index++} OFFSET $${index};
     `;
-    
+
     const dataResult = await this.db.query<RecipeRow>(query, [...values, filters.limit, offset]);
 
     return {
-      data: dataResult.rows.map(row => this.toRecipe(row)),
-      total
+      data: dataResult.rows.map((row) => this.toRecipe(row)),
+      total,
     };
   }
 }

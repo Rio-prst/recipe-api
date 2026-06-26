@@ -1,6 +1,12 @@
-import UserRepository, { User } from '../repositories/user.repository';
-import { hashPassword, comparePassword } from '../utils/hashingPassword';
-import { NotFoundError, UnauthorizedError, ConflictError, ForbiddenError, ValidationError } from '../utils/error';
+import UserRepository, { type User } from '../repositories/user.repository';
+import {
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from '../utils/error';
+import { comparePassword, hashPassword } from '../utils/hashingPassword';
 
 interface UpdateUserPayload {
   name?: string;
@@ -18,7 +24,7 @@ class UserService {
 
   private validateId(id: number) {
     if (!Number.isInteger(id) || id < 1) {
-      throw new ValidationError('Invalid ID format'); 
+      throw new ValidationError('Invalid ID format');
     }
   }
 
@@ -33,19 +39,18 @@ class UserService {
     return user;
   }
 
-  async updateUser(targetUserId: number, currentUserId: number, data: UpdateUserPayload): Promise<User> {
+  async updateUser(
+    targetUserId: number,
+    currentUserId: number,
+    data: UpdateUserPayload,
+  ): Promise<User> {
     this.validateId(targetUserId);
     if (targetUserId !== currentUserId) {
       throw new ForbiddenError('You are not allowed to update this user');
     }
 
-    const currentUserData = await this.userRepository.findById(targetUserId);
+    const currentUserData = await this.userRepository.findByIdWithPassword(targetUserId);
     if (!currentUserData) {
-      throw new NotFoundError('User not found');
-    }
-
-    const fullUserData = await this.userRepository.findEmailByPassword(currentUserData.email);
-    if (!fullUserData) {
       throw new NotFoundError('User not found');
     }
 
@@ -56,24 +61,24 @@ class UserService {
       }
     }
 
-    const updatePaylaod: { name?: string, email?: string, password?: string } = {};
-    if (data.name) updatePaylaod.name = data.name;
-    if (data.email) updatePaylaod.email = data.email;
+    const updatePayload: { name?: string; email?: string; password?: string } = {};
+    if (data.name) updatePayload.name = data.name;
+    if (data.email) updatePayload.email = data.email;
 
     if (data.password) {
       if (!data.currentPassword) {
         throw new ValidationError('Current password is required to set a new password');
       }
 
-      const isPasswordMatch = await comparePassword(data.currentPassword, fullUserData.password);
+      const isPasswordMatch = await comparePassword(data.currentPassword, currentUserData.password);
       if (!isPasswordMatch) {
         throw new UnauthorizedError('Invalid current password');
       }
 
-      updatePaylaod.password = await hashPassword(data.password);
+      updatePayload.password = await hashPassword(data.password);
     }
 
-    return await this.userRepository.update(targetUserId, updatePaylaod);
+    return await this.userRepository.update(targetUserId, updatePayload);
   }
 }
 

@@ -1,15 +1,15 @@
 import express, { type Express, type NextFunction, type Request, type Response } from 'express';
-import authRouter from './routes/auth.routes';
-import userRouter from './routes/user.routes';
-import recipeRouter from './routes/recipe.routes';
-import ingredientRouter from './routes/ingredient.routes';
-import tagRouter from './routes/tag.routes';
 import { errorHandler } from './middlewares/errorHandler';
+import authRouter from './routes/auth.routes';
+import ingredientRouter from './routes/ingredient.routes';
+import recipeRouter from './routes/recipe.routes';
+import tagRouter from './routes/tag.routes';
+import userRouter from './routes/user.routes';
 
 export function createApp(): Express {
   const app = express();
-  app.use(express.json());
-  
+  app.use(express.json({ limit: '100kb' }));
+
   app.use('/auth', authRouter);
   app.use('/users', userRouter);
   app.use('/recipes', recipeRouter);
@@ -21,13 +21,6 @@ export function createApp(): Express {
   });
 
   app.use(errorHandler);
-
-  app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
-    const e = err as { status?: number; code?: string; message?: string };
-    res.status(e.status ?? 500).json({
-      error: { code: e.code ?? 'INTERNAL', message: e.message ?? 'Internal Server Error' },
-    });
-  });
 
   return app;
 }

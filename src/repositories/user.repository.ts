@@ -1,5 +1,6 @@
-import { Pool } from 'pg';
+import type { Pool } from 'pg';
 import { db as dbClient } from '../config/db';
+import { ValidationError } from '../utils/error';
 
 export interface User {
   id: number;
@@ -21,25 +22,25 @@ interface UserRow {
 }
 
 class UserRepository {
-  constructor(private readonly db: Pool = dbClient) {};
+  constructor(private readonly db: Pool = dbClient) {}
 
-  private toUser(row: UserRow) : User {
+  private toUser(row: UserRow): User {
     return {
       id: Number(row.id),
       email: row.email,
       name: row.name,
       createdAt: row.created_at,
-    }
+    };
   }
 
-  private toUserWithPassword(row: UserRow) : UserWithPassword {
-    return { ...this.toUser(row), password: row.password }
+  private toUserWithPassword(row: UserRow): UserWithPassword {
+    return { ...this.toUser(row), password: row.password };
   }
 
-  async create(data: { email: string; password: string, name: string }): Promise<User> {
+  async create(data: { email: string; password: string; name: string }): Promise<User> {
     const result = await this.db.query<UserRow>(
       `INSERT INTO users (email, password, name) VALUES($1, $2, $3) RETURNING id, email, password, name, created_at;`,
-      [data.email, data.password, data.name]
+      [data.email, data.password, data.name],
     );
 
     const row = result.rows[0];
@@ -51,20 +52,14 @@ class UserRepository {
   }
 
   async findById(id: number): Promise<User | null> {
-    const result = await this.db.query<UserRow>(
-      `SELECT * FROM users WHERE id = $1`,
-      [id]
-    );
-    
+    const result = await this.db.query<UserRow>(`SELECT * FROM users WHERE id = $1`, [id]);
+
     const row = result.rows[0];
     return row ? this.toUser(row) : null;
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    const result = await this.db.query<UserRow>(
-      `SELECT * FROM users WHERE email = $1`,
-      [email]
-    );
+    const result = await this.db.query<UserRow>(`SELECT * FROM users WHERE email = $1`, [email]);
 
     const row = result.rows[0];
     return row ? this.toUser(row) : null;
@@ -72,15 +67,27 @@ class UserRepository {
 
   async findEmailByPassword(email: string): Promise<UserWithPassword | null> {
     const result = await this.db.query<UserRow>(
-      `SELECT * FROM users WHERE email = $1`,
-      [email]
+      `SELECT id, email, password, name, created_at FROM users WHERE email = $1`,
+      [email],
+    );
+    const row = result.rows[0];
+    return row ? this.toUserWithPassword(row) : null;
+  }
+
+  async findByIdWithPassword(id: number): Promise<UserWithPassword | null> {
+    const result = await this.db.query<UserRow>(
+      `SELECT id, email, password, created_at FROM users WHERE id = $1`,
+      [id],
     );
 
     const row = result.rows[0];
     return row ? this.toUserWithPassword(row) : null;
   }
 
-  async update(id: number, data: { name?: string, email?: string, password?: string}) : Promise<User> {
+  async update(
+    id: number,
+    data: { name?: string; email?: string; password?: string },
+  ): Promise<User> {
     const fields: string[] = [];
     const values: (string | number)[] = [];
     let index = 1;
@@ -98,6 +105,10 @@ class UserRepository {
       values.push(data.password);
     }
 
+    if (fields.length === 0) {
+      throw new ValidationError('No fields to update');
+    }
+
     values.push(id);
 
     const query = `UPDATE users SET ${fields.join(', ')} WHERE id = $${index} RETURNING id, email, name, created_at`;
@@ -113,4 +124,3 @@ class UserRepository {
 }
 
 export default UserRepository;
-

@@ -1,7 +1,7 @@
-import UserRepository, { User } from '../repositories/user.repository';
-import { hashPassword, comparePassword } from '../utils/hashingPassword';
-import { signToken } from '../utils/jwt';
+import UserRepository, { type User } from '../repositories/user.repository';
 import { ConflictError, UnauthorizedError } from '../utils/error';
+import { comparePassword, hashPassword } from '../utils/hashingPassword';
+import { signToken } from '../utils/jwt';
 
 class AuthService {
   private readonly userRepository: UserRepository;
@@ -12,7 +12,7 @@ class AuthService {
 
   async register(data: { email: string; password: string; name: string }) {
     const existingUser = await this.userRepository.findByEmail(data.email);
-    
+
     if (existingUser) {
       throw new ConflictError('Email already registered');
     }
@@ -21,14 +21,14 @@ class AuthService {
     const user: User = await this.userRepository.create({
       email: data.email,
       password: hashedPassword,
-      name: data.name
+      name: data.name,
     });
 
     const token = signToken({ sub: String(user.id), email: user.email });
     return { user, token };
   }
 
-  async login(data: { email: string; password: string}) {
+  async login(data: { email: string; password: string }) {
     const userWithPassword = await this.userRepository.findEmailByPassword(data.email);
 
     if (!userWithPassword) {

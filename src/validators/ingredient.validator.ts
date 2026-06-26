@@ -16,7 +16,7 @@ export function validateIngredient(body: unknown): IngredientInput {
   if (!b.name || b.name.trim().length === 0) {
     details.push({ path: 'name', message: 'Ingredient name is required' });
   }
-  
+
   if (!b.quantity || b.quantity.trim().length === 0) {
     details.push({ path: 'quantity', message: 'Quantity description is required' });
   }
@@ -25,8 +25,8 @@ export function validateIngredient(body: unknown): IngredientInput {
     throw new ValidationError('Validation failed', details);
   }
 
-  return { 
-    name: b.name!, 
-    quantity: b.quantity! 
+  return {
+    name: b.name!,
+    quantity: b.quantity!,
   };
 }

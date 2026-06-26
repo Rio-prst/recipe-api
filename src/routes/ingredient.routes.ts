@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { requireAuth } from '../middlewares/auth';
-import { 
-  addIngredient, 
-  getIngredients, 
-  updateIngredient, 
-  deleteIngredient 
+import {
+  addIngredient,
+  deleteIngredient,
+  getIngredients,
+  updateIngredient,
 } from '../controllers/ingredient.controller';
+import { requireAuth } from '../middlewares/auth';
 
 const ingredientRouter = Router();
 

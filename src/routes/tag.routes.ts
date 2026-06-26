@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import { requireAuth } from '../middlewares/auth';
-import { 
-  createTag, 
-  getTags, 
-  attachTag, 
-  detachTag, 
-  getRecipesByTag 
+import {
+  attachTag,
+  createTag,
+  detachTag,
+  getRecipesByTag,
+  getTags,
 } from '../controllers/tag.controller';
+import { requireAuth } from '../middlewares/auth';
 
 const tagRouter = Router();
 

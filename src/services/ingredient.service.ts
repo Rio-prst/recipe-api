@@ -1,6 +1,6 @@
-import IngredientRepository, { Ingredient } from '../repositories/ingredient.repository';
+import IngredientRepository, { type Ingredient } from '../repositories/ingredient.repository';
 import RecipeRepository from '../repositories/recipe.repository';
-import { NotFoundError, ForbiddenError } from '../utils/error';
+import { ForbiddenError, NotFoundError } from '../utils/error';
 
 class IngredientService {
   private readonly ingredientRepository: IngredientRepository;
@@ -17,7 +17,12 @@ class IngredientService {
     if (recipe.authorId !== userId) throw new ForbiddenError('You are not author of this recipe');
   }
 
-  async addIngredient(recipeId: number, userId: number, name: string, quantity: string): Promise<Ingredient> {
+  async addIngredient(
+    recipeId: number,
+    userId: number,
+    name: string,
+    quantity: string,
+  ): Promise<Ingredient> {
     await this.verifyRecipeAuthor(recipeId, userId);
     return await this.ingredientRepository.create(recipeId, name, quantity);
   }
@@ -28,7 +33,11 @@ class IngredientService {
     return await this.ingredientRepository.findByRecipeId(recipeId);
   }
 
-  async updateIngredient(id: number, userId: number, data: Partial<Omit<Ingredient, 'id' | 'recipeId'>>): Promise<Ingredient> {
+  async updateIngredient(
+    id: number,
+    userId: number,
+    data: Partial<Omit<Ingredient, 'id' | 'recipeId'>>,
+  ): Promise<Ingredient> {
     const ingredient = await this.ingredientRepository.findById(id);
     if (!ingredient) throw new NotFoundError('Ingredient not found');
     await this.verifyRecipeAuthor(ingredient.recipeId, userId);

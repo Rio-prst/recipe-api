@@ -1,5 +1,5 @@
+import type { Difficulty } from '../repositories/recipe.repository';
 import { ValidationError } from '../utils/error';
-import { Difficulty } from '../repositories/recipe.repository';
 
 export interface CreateRecipeInput {
   title: string;
@@ -33,18 +33,18 @@ export function validateCreateRecipe(body: unknown): CreateRecipeInput {
   } else {
     const time = Number(b.cookingTime);
     if (isNaN(time) || !Number.isInteger(time) || time < 1) {
-      details.push({ 
-        path: 'cookingTime', 
-        message: 'Cooking time must be an integer greater than or equal to 1' 
+      details.push({
+        path: 'cookingTime',
+        message: 'Cooking time must be an integer greater than or equal to 1',
       });
     }
   }
 
   const allowedDifficulties: Difficulty[] = ['easy', 'medium', 'hard'];
   if (!b.difficulty || !allowedDifficulties.includes(b.difficulty!)) {
-    details.push({ 
-      path: 'difficulty', 
-      message: 'Difficulty must be easy, medium, or hard' 
+    details.push({
+      path: 'difficulty',
+      message: 'Difficulty must be easy, medium, or hard',
     });
   }
 
@@ -54,7 +54,7 @@ export function validateCreateRecipe(body: unknown): CreateRecipeInput {
 
   return {
     title: b.title!,
-    description: b.description ?? '', 
+    description: b.description ?? '',
     cookingTime: Number(b.cookingTime),
     difficulty: b.difficulty!,
   };

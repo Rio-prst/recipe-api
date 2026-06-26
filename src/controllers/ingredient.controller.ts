@@ -1,18 +1,22 @@
-import { Response, NextFunction } from 'express';
-import { AuthRequest } from '../middlewares/auth';
+import type { NextFunction, Response } from 'express';
+import type { AuthRequest } from '../middlewares/auth';
 import IngredientService from '../services/ingredient.service';
 import { validateIngredient } from '../validators/ingredient.validator';
 
 const ingredientService = new IngredientService();
 
-export async function addIngredient(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+export async function addIngredient(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const validateBody = validateIngredient(req.body);
     const ingredient = await ingredientService.addIngredient(
       Number(req.params.recipeId),
       req.user!.id,
       validateBody.name,
-      validateBody.quantity
+      validateBody.quantity,
     );
 
     res.status(201).json({ ingredient });
@@ -21,7 +25,11 @@ export async function addIngredient(req: AuthRequest, res: Response, next: NextF
   }
 }
 
-export async function getIngredients(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+export async function getIngredients(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const data = await ingredientService.getIngredientByRecipe(Number(req.params.recipeId));
     res.status(200).json({ data });
@@ -30,7 +38,11 @@ export async function getIngredients(req: AuthRequest, res: Response, next: Next
   }
 }
 
-export async function updateIngredient(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+export async function updateIngredient(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const id = Number(req.params.id);
     const userId = req.user!.id;
@@ -43,7 +55,11 @@ export async function updateIngredient(req: AuthRequest, res: Response, next: Ne
   }
 }
 
-export async function deleteIngredient(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+export async function deleteIngredient(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     await ingredientService.deleteIngredient(Number(req.params.id), req.user!.id);
     res.status(204).send();

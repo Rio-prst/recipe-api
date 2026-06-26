@@ -15,7 +15,7 @@ export function signToken(payload: JWTPayload): string {
   return jwt.sign(payload, jwtSecret, { expiresIn: '7d' });
 }
 
-export function verifyToken(token: string) : JWTPayload {
+export function verifyToken(token: string): JWTPayload {
   if (!jwtSecret) {
     throw new Error('Missing required env: JWT_SECRET');
   }

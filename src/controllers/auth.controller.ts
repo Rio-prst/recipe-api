@@ -1,7 +1,8 @@
-import { NextFunction, Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
+import type { AuthRequest } from '../middlewares/auth';
 import AuthService from '../services/auth.service';
-import { validateRegister, validateLogin } from '../validators/auth.validator';
-import { AuthRequest } from '../middlewares/auth';
+import { UnauthorizedError } from '../utils/error';
+import { validateLogin, validateRegister } from '../validators/auth.validator';
 
 const authService = new AuthService();
 
@@ -18,7 +19,7 @@ export async function register(req: Request, res: Response, next: NextFunction) 
   }
 }
 
-export async function login(req: Request, res:Response, next: NextFunction) {
+export async function login(req: Request, res: Response, next: NextFunction) {
   try {
     const input = validateLogin(req.body);
     const result = await authService.login(input);
@@ -34,8 +35,7 @@ export async function login(req: Request, res:Response, next: NextFunction) {
 export async function me(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     if (!req.user || !req.user.id) {
-      res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } });
-      return;
+      return next(new UnauthorizedError('Unauthorized'));
     }
 
     const user = await authService.me(Number(req.user.id));

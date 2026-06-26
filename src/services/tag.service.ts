@@ -1,6 +1,6 @@
-import TagRepository, { Tag } from '../repositories/tag.repository';
 import RecipeRepository from '../repositories/recipe.repository';
-import { NotFoundError, ForbiddenError, ConflictError } from '../utils/error';
+import TagRepository, { type Tag } from '../repositories/tag.repository';
+import { ConflictError, ForbiddenError, NotFoundError } from '../utils/error';
 
 class TagService {
   private readonly tagRepository: TagRepository;
@@ -44,12 +44,12 @@ class TagService {
       tagId = tag.id;
     }
 
-    const isAlreadyAttached = await this.tagRepository.isTagAttached(recipeId, tagId);
-    if (isAlreadyAttached) {
+    const tag = await this.tagRepository.attachToRecipe(recipeId, tagId);
+    if (!tag) {
       throw new ConflictError('Tag already attached to this recipe');
     }
 
-    return await this.tagRepository.attachToRecipe(recipeId, tagId);
+    return tag;
   }
 
   async detachTag(recipeId: number, userId: number, tagId: number): Promise<void> {
@@ -62,13 +62,16 @@ class TagService {
   async getRecipesByTag(slug: string, queryParams: Record<string, string | string[] | undefined>) {
     const page = Math.max(1, Number(queryParams.page ?? 1));
     const limit = Math.min(100, Math.max(1, Number(queryParams.limit ?? 20)));
-    const difficulty = typeof queryParams.difficulty === 'string' ? queryParams.difficulty : undefined;
+    const difficulty =
+      typeof queryParams.difficulty === 'string' ? queryParams.difficulty : undefined;
+    const tag = await this.tagRepository.findBySlug(slug);
+    if (!tag) throw new NotFoundError('Tag not found');
+    const recipes = await this.tagRepository.findRecipeBySlug(slug, page, limit, difficulty);
 
-    try {
-      return await this.tagRepository.findRecipeBySlug(slug, page, limit, difficulty);
-    } catch (err) {
-      throw new NotFoundError('Tag not found');
-    }
+    return {
+      tag: tag,
+      data: recipes.data,
+    };
   }
 }
 

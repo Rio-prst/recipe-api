@@ -3,7 +3,7 @@ export class AppError extends Error {
     public code: string,
     public statusCode: number,
     message: string,
-    public details?: { path: string; message: string }[]
+    public details?: { path: string; message: string }[],
   ) {
     super(message);
   }

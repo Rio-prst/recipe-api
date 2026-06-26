@@ -1,12 +1,17 @@
-import { Response, NextFunction } from 'express';
-import { AuthRequest } from '../middlewares/auth';
+import type { NextFunction, Response } from 'express';
+import type { AuthRequest } from '../middlewares/auth';
+import type { Difficulty } from '../repositories/recipe.repository';
 import RecipeService from '../services/recipe.service';
+import { ValidationError } from '../utils/error';
 import { validateCreateRecipe, validateRecipeQuery } from '../validators/recipe.validator';
-import { Difficulty } from '../repositories/recipe.repository';
 
 const recipeService = new RecipeService();
 
-export async function createRecipe(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+export async function createRecipe(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const validateBody = validateCreateRecipe(req.body);
     const authorId = req.user!.id;
@@ -22,7 +27,11 @@ export async function createRecipe(req: AuthRequest, res: Response, next: NextFu
   }
 }
 
-export async function getAllRecipes(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+export async function getAllRecipes(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     validateRecipeQuery(req.query);
     const query = req.query as Record<string, string | string[] | undefined>;
@@ -33,13 +42,16 @@ export async function getAllRecipes(req: AuthRequest, res: Response, next: NextF
   }
 }
 
-export async function getRecipeById(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+export async function getRecipeById(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const id = Number(req.params.id);
 
     if (isNaN(id)) {
-      res.status(400).json({ error: 'Invalid ID format' });
-      return;
+      throw new ValidationError('Invalid ID format');
     }
 
     const recipeDetail = await recipeService.getRecipeById(id);
@@ -52,9 +64,9 @@ export async function getRecipeById(req: AuthRequest, res: Response, next: NextF
         cookingTime: recipeDetail.cookingTime,
         difficulty: recipeDetail.difficulty,
         authorId: recipeDetail.authorId,
-        createdAt: recipeDetail.createdAt
-      }, 
-      ingredients: recipeDetail.ingredients, 
+        createdAt: recipeDetail.createdAt,
+      },
+      ingredients: recipeDetail.ingredients,
       tags: recipeDetail.tags,
     });
   } catch (err) {
@@ -62,7 +74,11 @@ export async function getRecipeById(req: AuthRequest, res: Response, next: NextF
   }
 }
 
-export async function updateRecipe(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+export async function updateRecipe(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const id = Number(req.params.id);
     const currentUserId = req.user!.id;
@@ -70,8 +86,8 @@ export async function updateRecipe(req: AuthRequest, res: Response, next: NextFu
     const title = typeof req.body.title === 'string' ? req.body.title : undefined;
     const description = typeof req.body.description === 'string' ? req.body.description : undefined;
     const cookingTime = req.body.cookingTime ? Number(req.body.cookingTime) : undefined;
-    const difficulty = ['easy', 'medium', 'hard'].includes(req.body.difficulty) 
-      ? (req.body.difficulty as Difficulty) 
+    const difficulty = ['easy', 'medium', 'hard'].includes(req.body.difficulty)
+      ? (req.body.difficulty as Difficulty)
       : undefined;
 
     const updateData = {
@@ -89,7 +105,11 @@ export async function updateRecipe(req: AuthRequest, res: Response, next: NextFu
   }
 }
 
-export async function deleteRecipe(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+export async function deleteRecipe(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const id = Number(req.params.id);
     const currentUserId = req.user!.id;
